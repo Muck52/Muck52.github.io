@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Peter Privacy</title>
+<style>
+  :root { --bg: #0d0f0e; --ink: #d8dcd6; --muted: #8a918b; --silk: #8fc79a; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.6 ui-monospace, Menlo, Consolas, monospace; }
+  main { max-width: 680px; margin: 0 auto; padding: 48px 16px; }
+  h1 { color: var(--silk); font-size: 26px; }
+  h2 { color: var(--silk); font-size: 18px; margin-top: 32px; }
+  a { color: var(--silk); }
+  .muted { color: var(--muted); }
+  li { margin-bottom: 8px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Peter: privacy policy</h1>
+  <p class="muted">Last updated November 8, 2026</p>
+  <p>Peter is a personal Android app (a pet jumping spider) used on one phone by its owner. It has no servers, no
+    accounts and no ads, and its developer collects no data from it.</p>
+
+  <h2>What stays on the phone</h2>
+  <ul>
+    <li>Everything Peter knows and feels (his notes, memories, diary, tastes and creations) is stored in the app's
+      private storage on the phone.</li>
+    <li>To react to what is on the screen, Peter uses Android's accessibility service to read on-screen text. That
+      text is used on the phone only and is never sent anywhere.</li>
+    <li>Study notes are written with Gemini Nano, which runs on the phone itself.</li>
+  </ul>
+
+  <h2>What leaves the phone</h2>
+  <ul>
+    <li><b>Wikipedia:</b> Peter looks up topics he is curious about on Wikipedia. Only topic names are sent, never
+      screen text or personal information.</li>
+    <li><b>Google Gemini (optional):</b> if the owner sets up a Gemini API key, Peter sends his own notes and topic
+      names to Google's Gemini API to help draw his creations and design his toys. Never screen text. Google's terms
+      for the Gemini API apply.</li>
+    <li><b>Google Drive backups (optional):</b> when the owner connects Google Drive, Peter saves backup files of his
+      own data to a "Peter" folder in the owner's own Google Drive, nightly and when asked, and can read them back to
+      restore himself.</li>
+  </ul>
+
+  <h2>Google Drive access</h2>
+  <p>Peter asks only for the <code>drive.file</code> permission: he can see, create and delete only the files he
+    created himself. He cannot see or change anything else in the Drive. The backup files contain only Peter's own
+    data (no API keys, no passwords). Access can be removed at any time from the Google Account's
+    "Third-party apps &amp; services" page; deleting the Peter folder deletes the backups.</p>
+
+  <h2>Sharing</h2>
+  <p>No data is sold or shared with anyone. Data goes only to the services listed above, and only to do what is
+    described there.</p>
+
+  <h2>Contact</h2>
+  <p>Questions about this policy can be raised as an issue on this site's GitHub repository.</p>
+  <p><a href="index.html">Back to Peter</a></p>
+</main>
+</body>
+</html>
