@@ -68,11 +68,12 @@
   #zoom { background: var(--stage); border-radius: 6px; cursor: crosshair; touch-action: none; }
   #pixinfo { font: 13px/1.6 var(--font-mono); color: var(--muted); min-width: 170px; }
   #pixinfo i { display: inline-block; width: 14px; height: 14px; vertical-align: -2px; border-radius: 2px; margin-right: 6px; }
-  .anims { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
-  .anims figure { margin: 0; display: grid; gap: 6px; min-width: 0; }
-  .anim-stage { background: var(--stage); border-radius: 6px; padding: 12px; display: flex; justify-content: center; }
-  .anims figcaption { font: 13px var(--font-mono); color: var(--muted); }
-  .anims figcaption b { color: var(--fg); }
+  .hunt-stage { background: var(--stage); border-radius: 8px; padding: 16px; display: flex; justify-content: center; }
+  .hunt-stage canvas { width: 100%; max-width: 656px; }
+  .scrub { display: flex; align-items: center; gap: 8px; font: 13px var(--font-mono); color: var(--muted); flex: 1 1 220px; }
+  .scrub input { flex: 1; accent-color: var(--accent); }
+  .phase { font: 600 13px var(--font-mono); color: var(--accent); align-self: center; min-width: 7ch; }
+  .controls { align-items: center; }
   .controls { display: flex; gap: 8px; flex-wrap: wrap; }
   .controls button { font: 600 13px var(--font-mono); padding: 7px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--fg); cursor: pointer; }
   .controls button[aria-pressed="true"] { border-color: var(--accent); }
@@ -91,22 +92,21 @@
   <header style="display:grid;gap:10px">
     <div class="eyebrow">Pixel cats · Norwegian Forest Cat</div>
     <h1>Norwegian Forest Cat sprite set</h1>
-    <p class="lede">A 16-bit-style sprite set built from the reference sheet: a majestic seated portrait and four everyday poses, in one shared 32-colour woodland palette, with the seated portrait animated hunting a mouse. The breed facts behind the design are in the <a href="https://claude.ai/artifact/BbfGHfGHjmvfPhxoeddKAS" target="_blank" rel="noopener">Norwegian Forest Cat breed study</a>.</p>
+    <p class="lede">A 16-bit-style sprite set built from the reference sheet: a majestic seated portrait and four everyday poses, in one shared 32-colour woodland palette, with the seated portrait animated through a full mouse hunt at 12 fps. The breed facts behind the design are in the <a href="https://claude.ai/artifact/BbfGHfGHjmvfPhxoeddKAS" target="_blank" rel="noopener">Norwegian Forest Cat breed study</a>.</p>
   </header>
 
   <section aria-labelledby="hunt-h">
-    <h2 id="hunt-h">Seated portrait: hunting a mouse</h2>
-    <p>One continuous motion, sampled at 6, 9 and 12 frames over the same 1.8-second loop, so the only difference is smoothness. The mouse darts in to sniff and darts away again. The cat's head trails it with a slight lag and lowers to focus as it comes closer. His tail tip twitches, the far ear flicks as the mouse leaves, and the body rises one pixel with each breath. Every pixel is from the original art, moved only by whole pixels.</p>
-    <div class="anims">
-      <figure><div class="anim-stage"><canvas class="px" data-n="6"></canvas></div><figcaption><b>6 frames</b> · 300 ms each</figcaption></figure>
-      <figure><div class="anim-stage"><canvas class="px" data-n="9"></canvas></div><figcaption><b>9 frames</b> · 200 ms each</figcaption></figure>
-      <figure><div class="anim-stage"><canvas class="px" data-n="12"></canvas></div><figcaption><b>12 frames</b> · 150 ms each</figcaption></figure>
-    </div>
+    <h2 id="hunt-h">Seated portrait: the hunt</h2>
+    <p>12 frames per second, 6.3 seconds. The mouse scurries in and he locks on. He sinks into a crouch, wiggles his hindquarters with his tail tip twitching, then pounces with his forelegs shooting out to pin it. He dips to bite and sits back up, lifting his head with the mouse in his mouth. The cat is the original seated art, posed by a five-bone rig, so every frame keeps the sprite's own pixels and palette.</p>
+    <div class="hunt-stage"><canvas class="px" id="hunt"></canvas></div>
     <div class="controls">
       <button type="button" id="play" aria-pressed="true">Pause</button>
       <button type="button" id="slow" aria-pressed="false">Slow motion ¼×</button>
+      <button type="button" id="loop" aria-pressed="true">Loop</button>
+      <label class="scrub"><span id="fnum">frame 1</span><input type="range" id="scrub" min="0" value="0" aria-label="Frame"></label>
+      <span class="phase" id="phase">watch</span>
     </div>
-    <details class="strips"><summary>Frame strips</summary><div id="strips"></div></details>
+    <details class="strips"><summary>Every frame</summary><div id="strips"></div></details>
   </section>
 
   <section aria-label="The sprite sheet">
@@ -169,59 +169,74 @@
       <li><b>Cut-out.</b> The flat background and the cool ground shadows are flood-filled in from the outside. The black outline stops the fill, so dark fur is never mistaken for shadow. Shadows are drawn separately in code.</li>
       <li><b>Palette.</b> Median cut over the fur, plus reserved slots for eye greens and nose pinks so the small accents survive. Accents only land where the source was green or pink.</li>
       <li><b>Cleanup.</b> Near-identical stray pixels join their neighbours, specks under 3 px are removed, and no holes are left inside a sprite.</li>
-      <li><b>Animation.</b> The hunt warps the seated sprite with a smooth displacement field and samples it pixel by pixel, so frames reuse the original art moved by whole pixels. The mouse is a small hand-drawn 3-frame sprite.</li>
+      <li><b>Animation.</b> The seated sprite is rigged with five bones: body, chest, head, forelegs and tail tip. Each pixel blends smoothly between neighbouring bones so fur bends rather than tears. Each frame is posed RotSprite-style: Scale2x up 4×, move every sub-pixel, then downsample by majority colour. The forelegs are pinned shoulder-to-paw, so the paws stay planted in the crouch and land on the mouse in the pounce. The mouse is hand-drawn.</li>
     </ol>
-    <p class="files">pixel/sprites/nfc-{sit,stalk,stand,swipe,arch}.png · 1×, transparent, plus @4x<br>pixel/sprites/nfc-sprites.js · shared palette + pixel rows for every pose<br>pixel/sprites/nfc-sit-hunt.js · the hunt at 6, 9 and 12 frames<br>pixel/anim/sit-hunt-{6,9,12}f.gif and frame strips<br>pixel/tools/build_sprites.py · rebuilds the sprites from pixel/reference/<br>pixel/tools/animate_sit_hunt.py · rebuilds the hunt</p>
+    <p class="files">pixel/sprites/nfc-{sit,stalk,stand,swipe,arch}.png · 1×, transparent, plus @4x<br>pixel/sprites/nfc-sprites.js · shared palette + pixel rows for every pose<br>pixel/sprites/nfc-hunt.js · the hunt, 76 frames at 12 fps<br>pixel/anim/hunt-12fps.gif<br>pixel/tools/build_sprites.py · rebuilds the sprites from pixel/reference/<br>pixel/tools/rig.py, animate_hunt.py · the rig and the hunt</p>
   </section>
 </main>
 
 <script type="module">
 import data from './sprites/nfc-sprites.js';
-import hunt from './sprites/nfc-sit-hunt.js';
+import hunt from './sprites/nfc-hunt.js';
 
-// ---- hunting animation: three frame counts on one clock
-const AS = 2;   // display scale for the animation canvases
-function drawFrame(canvas, rows, scale) {
-  const ctx = canvas.getContext('2d');
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  rows.forEach((row, y) => [...row].forEach((ch, x) => {
+// ---- the hunt, played at its native 12 fps
+const PHASES = [[0, 'watch'], [1.4, 'crouch'], [2.3, 'wiggle'], [3.25, 'pounce'], [3.6, 'pin + bite'], [4.25, 'sit up'], [5.4, 'proud']];
+const huntCanvas = document.getElementById('hunt');
+const HS = 4;
+huntCanvas.width = hunt.w * HS; huntCanvas.height = hunt.h * HS;
+const hctx = huntCanvas.getContext('2d');
+function drawHunt(i) {
+  hctx.clearRect(0, 0, huntCanvas.width, huntCanvas.height);
+  hunt.frames[i].forEach((row, y) => [...row].forEach((ch, x) => {
     if (ch === '.') return;
-    ctx.fillStyle = hunt.palette[ch];
-    ctx.fillRect(x * scale, y * scale, scale, scale);
+    hctx.fillStyle = hunt.palette[ch];
+    hctx.fillRect(x * HS, y * HS, HS, HS);
   }));
 }
-const players = [...document.querySelectorAll('canvas[data-n]')].map((c) => {
-  c.width = hunt.w * AS; c.height = hunt.h * AS;
-  return { c, frames: hunt.counts[c.dataset.n], last: -1 };
-});
+const scrub = document.getElementById('scrub');
+const fnum = document.getElementById('fnum');
+const phaseEl = document.getElementById('phase');
+scrub.max = hunt.frames.length - 1;
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-let playing = !reduce, rate = 1, clock = 0, prev = performance.now();
+let playing = !reduce, rate = 1, looping = true, pos = 0, shown = -1, prev = performance.now();
+const HOLD = 1.0;   // seconds to rest on the final pose before looping
+function showFrame(i) {
+  if (i === shown) return;
+  shown = i; drawHunt(i); scrub.value = i;
+  fnum.textContent = `frame ${i + 1} / ${hunt.frames.length}`;
+  const t = i / hunt.fps;
+  phaseEl.textContent = PHASES.filter(([s]) => t >= s).pop()[1];
+}
 function tick(now) {
-  const dt = (now - prev) / 1000; prev = now;
-  if (playing) clock += dt * rate;
-  const t = (clock / hunt.loopSeconds) % 1;
-  for (const p of players) {
-    const i = Math.floor(t * p.frames.length) % p.frames.length;
-    if (i !== p.last) { drawFrame(p.c, p.frames[i], AS); p.last = i; }
+  const dt = Math.min(Math.max((now - prev) / 1000, 0), 0.1); prev = now;
+  if (playing) {
+    pos += dt * rate * hunt.fps;
+    const end = hunt.frames.length - 1 + HOLD * hunt.fps;
+    if (pos > end) { if (looping) pos = 0; else { pos = hunt.frames.length - 1; playing = false; syncButtons(); } }
   }
+  showFrame(Math.max(0, Math.min(Math.floor(pos), hunt.frames.length - 1)));
   requestAnimationFrame(tick);
 }
-requestAnimationFrame(tick);
 const playBtn = document.getElementById('play');
 const slowBtn = document.getElementById('slow');
+const loopBtn = document.getElementById('loop');
 function syncButtons() {
   playBtn.textContent = playing ? 'Pause' : 'Play';
   playBtn.setAttribute('aria-pressed', String(playing));
   slowBtn.setAttribute('aria-pressed', String(rate < 1));
+  loopBtn.setAttribute('aria-pressed', String(looping));
 }
-playBtn.addEventListener('click', () => { playing = !playing; syncButtons(); });
+playBtn.addEventListener('click', () => { if (!playing && shown >= hunt.frames.length - 1) pos = 0; playing = !playing; syncButtons(); });
 slowBtn.addEventListener('click', () => { rate = rate < 1 ? 1 : 0.25; syncButtons(); });
-syncButtons();
+loopBtn.addEventListener('click', () => { looping = !looping; syncButtons(); });
+scrub.addEventListener('input', () => { playing = false; pos = +scrub.value; syncButtons(); showFrame(+scrub.value); });
+syncButtons(); showFrame(0); requestAnimationFrame(tick);
+// every frame, in rows of 12 (one second each)
 const strips = document.getElementById('strips');
-for (const n of Object.keys(hunt.counts)) {
-  const frames = hunt.counts[n];
+for (let s0 = 0; s0 < hunt.frames.length; s0 += hunt.fps) {
+  const frames = hunt.frames.slice(s0, s0 + hunt.fps);
   const wrap = document.createElement('div');
-  wrap.innerHTML = `<div class="strip-label">${n} frames</div>`;
+  wrap.innerHTML = `<div class="strip-label">${(s0 / hunt.fps).toFixed(0)} s · frames ${s0 + 1}–${s0 + frames.length}</div>`;
   const box = document.createElement('div'); box.className = 'strip';
   const c = document.createElement('canvas'); c.className = 'px';
   const gap = 4;
@@ -232,7 +247,7 @@ for (const n of Object.keys(hunt.counts)) {
     ctx.fillStyle = hunt.palette[ch];
     ctx.fillRect(i * (hunt.w + gap) + x, y, 1, 1);
   })));
-  c.style.width = `${c.width * 2}px`;
+  c.style.width = `${c.width}px`;
   box.append(c); wrap.append(box); strips.append(wrap);
 }
 const S = Object.fromEntries(data.sprites.map((s) => [s.id, s]));
