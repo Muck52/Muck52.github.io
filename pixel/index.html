@@ -64,7 +64,7 @@
   #pixinfo { font: 13px/1.6 var(--font-mono); color: var(--muted); min-width: 170px; }
   #pixinfo b { color: var(--fg); }
   .files { font: 13.5px/1.7 var(--font-mono); }
-  .tiers { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+  .tiers { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
   .tier { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; display: grid; grid-template-rows: auto 1fr; overflow: hidden; }
   .tier .art { background: var(--scene-dark); display: flex; align-items: flex-end; justify-content: center; padding: 18px 12px; min-height: 250px; }
   .tier .spec { padding: 12px 14px 14px; display: grid; gap: 6px; font-size: 14.5px; }
@@ -82,22 +82,23 @@
 <main>
   <header style="display:grid;gap:10px">
     <div class="eyebrow">Pixel cats · Norwegian Forest Cat</div>
-    <h1>One cat, three bit depths</h1>
-    <p class="lede">The same sitting Norwegian Forest Cat, kept cute and kept true to the breed, drawn at 8-bit, 16-bit and 32-bit. Everything the art relies on comes from the <a href="https://claude.ai/artifact/BbfGHfGHjmvfPhxoeddKAS" target="_blank" rel="noopener">Norwegian Forest Cat breed study</a>.</p>
+    <h1>One cat, four bit depths</h1>
+    <p class="lede">The same sitting Norwegian Forest Cat, kept cute and kept true to the breed, drawn at 8-bit, 16-bit, 32-bit and, for the fun of it, 64-bit. Everything the art relies on comes from the <a href="https://claude.ai/artifact/BbfGHfGHjmvfPhxoeddKAS" target="_blank" rel="noopener">Norwegian Forest Cat breed study</a>.</p>
   </header>
 
   <section aria-label="The three tiers">
     <div class="tiers">
-      <article class="tier"><div class="art"><canvas class="px" data-tier="8" data-fit="200"></canvas></div><div class="spec"><h3>8-bit</h3><dl><dt>canvas</dt><dd>26 × 26 px</dd><dt>colours</dt><dd>3 + transparent</dd></dl><p>NES-style: one outline colour, one fur, one white. The breed has to read from silhouette alone: triangle head, straight profile, tall ear, bib.</p></div></article>
-      <article class="tier"><div class="art"><canvas class="px" data-tier="16" data-fit="200"></canvas></div><div class="spec"><h3>16-bit</h3><dl><dt>canvas</dt><dd>38 × 38 px</dd><dt>colours</dt><dd>10</dd></dl><p>SNES-style: one highlight and one shadow per material, bold tabby marks, a green eye with a catchlight, pink ear and nose.</p></div></article>
-      <article class="tier"><div class="art"><canvas class="px" data-tier="32" data-fit="200"></canvas></div><div class="spec"><h3>32-bit</h3><dl><dt>canvas</dt><dd>62 × 66 px</dd><dt>colours</dt><dd>16</dd></dl><p>Hi-bit: colour ramps, rim light on every fur tuft, a softened outline, ear furnishings and lynx tips, mackerel stripes, a ringed tail.</p></div></article>
+      <article class="tier"><div class="art"><canvas class="px" data-tier="8" data-fit="210"></canvas></div><div class="spec"><h3>8-bit</h3><dl><dt>canvas</dt><dd>26 × 26 px</dd><dt>colours</dt><dd>3 + transparent</dd></dl><p>NES-style: one outline colour, one fur, one white. The breed has to read from silhouette alone: triangle head, straight profile, tall ear, bib.</p></div></article>
+      <article class="tier"><div class="art"><canvas class="px" data-tier="16" data-fit="210"></canvas></div><div class="spec"><h3>16-bit</h3><dl><dt>canvas</dt><dd>38 × 38 px</dd><dt>colours</dt><dd>10</dd></dl><p>SNES-style: one highlight and one shadow per material, bold tabby marks, a green eye with a catchlight, pink ear and nose.</p></div></article>
+      <article class="tier"><div class="art"><canvas class="px" data-tier="32" data-fit="210"></canvas></div><div class="spec"><h3>32-bit</h3><dl><dt>canvas</dt><dd>62 × 66 px</dd><dt>colours</dt><dd>16</dd></dl><p>Hi-bit: colour ramps, rim light on every fur tuft, a softened outline, ear furnishings and lynx tips, mackerel stripes, a ringed tail.</p></div></article>
+      <article class="tier"><div class="art"><canvas class="px" data-tier="64" data-fit="210"></canvas></div><div class="spec"><h3>64-bit</h3><dl><dt>canvas</dt><dd>96 × 102 px</dd><dt>colours</dt><dd>26</dd></dl><p>N64-era "rendered" look: shading is lit, not painted. A height field from the silhouette gives each pixel a surface normal, lit from the top-left and snapped to 4–6 step ramps, with a faint fur grain.</p></div></article>
     </div>
     <p>The same five breed markers survive at every tier, in priority order: triangle head with a straight profile, high-set tall ears, the ruff, a heavy wrapped tail, and a solid body.</p>
   </section>
 
   <section>
     <h2>Look closer</h2>
-    <div class="switch" role="group" aria-label="Bit depth"><button type="button" data-set="8" aria-pressed="false">8-bit</button><button type="button" data-set="16" aria-pressed="false">16-bit</button><button type="button" data-set="32" aria-pressed="true">32-bit</button></div>
+    <div class="switch" role="group" aria-label="Bit depth"><button type="button" data-set="8" aria-pressed="false">8-bit</button><button type="button" data-set="16" aria-pressed="false">16-bit</button><button type="button" data-set="32" aria-pressed="true">32-bit</button><button type="button" data-set="64" aria-pressed="false">64-bit</button></div>
   </section>
 
   <section aria-label="The sprite in three scenes">
@@ -176,7 +177,7 @@
 
   <section>
     <h2>Files and next steps</h2>
-    <p class="files">pixel/sprites/nfc-8bit.png · nfc-16bit.png · nfc-32bit.png (1×, transparent, plus @4x)<br>pixel/sprites/nfc-*.js · palette + pixel rows, so coat variants are palette swaps<br>pixel/tools/ · the generators</p>
+    <p class="files">pixel/sprites/nfc-8bit.png · nfc-16bit.png · nfc-32bit.png · nfc-64bit.png (1×, transparent, plus @4x)<br>pixel/sprites/nfc-*.js · palette + pixel rows, so coat variants are palette swaps<br>pixel/tools/ · the generators</p>
     <p>All of these are in the <code>pixel/</code> folder of the site repo. Candidate next steps:</p>
     <ul>
       <li>a 3/4 face portrait at each tier</li>
@@ -192,8 +193,10 @@
 import s8 from './sprites/nfc-8bit.js';
 import s16 from './sprites/nfc-16bit.js';
 import s32 from './sprites/nfc-32bit.js';
-const TIERS = { 8: s8, 16: s16, 32: s32 };
-const NAMES = { K: 'outline', k: 'soft outline', D: 'tabby stripe / shadow', d: 'core shadow', M: 'base fur', L: 'lit fur', H: 'highlight',
+import s64 from './sprites/nfc-64bit.js';
+const TIERS = { 8: s8, 16: s16, 32: s32, 64: s64 };
+const NAMES = { 0: 'fur, deepest shade', 1: 'fur shade', 2: 'fur', 3: 'fur, lit', 4: 'fur, bright', 5: 'fur, highlight', 6: 'stripe, darkest', 7: 'stripe', 8: 'stripe, lit', 9: 'stripe, highlight',
+  q: 'white, shadow', r: 'white, shade', s: 'white', u: 'white, lit', v: 'white, highlight', G: 'iris glint', X: 'catchlight', n: 'nose shade', p: 'inner ear shade', K: 'outline', k: 'soft outline', D: 'tabby stripe / shadow', d: 'core shadow', M: 'base fur', L: 'lit fur', H: 'highlight',
   W: 'white', S: 'white shade', s: 'white line', E: 'iris', F: 'iris shade', e: 'pupil', N: 'nose leather', P: 'inner ear' };
 let current = 32;
 function draw(canvas, sprite, scale) {
@@ -223,7 +226,7 @@ function render() {
     pal.insertAdjacentHTML('beforeend', `<div class="sw"><i style="background:${hex}"></i><span>${NAMES[k] || k}<br><code>${k} · ${hex}</code></span></div>`);
   }
   document.getElementById('palnote').textContent = `${Object.keys(sp.pal).length} colours at ${current}-bit. Light comes from the top-left at every tier.`;
-  Z = Math.max(4, Math.floor(440 / sp.h));
+  Z = Math.max(3, Math.floor(440 / sp.h));
   draw(zoom, sp, Z);
   info.textContent = 'Hover or tap the sprite.';
   document.querySelectorAll('.switch button').forEach((b) => b.setAttribute('aria-pressed', String(+b.dataset.set === current)));
