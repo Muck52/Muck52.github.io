@@ -11,7 +11,6 @@ Steps
  4. One shared palette: median cut over the brown/cream/charcoal fur, plus reserved slots for the
     eye greens and nose pinks, so the small accents survive. Accents only go where the source was green/pink.
  5. Cleanup: near-identical stray pixels join their neighbours; specks under 3 px are removed.
- 6. Hand pass: the seated portrait's eyes are repainted as large almond eyes with a catchlight.
 Outputs go to pixel/sprites/.
 """
 import json, os
@@ -137,18 +136,6 @@ def main():
         for k in range(1, n2 + 1):
             if (lab2 == k).sum() < 3: out[lab2 == k] = -1
         sprites[name] = (out, title)
-
-    # hand pass: large almond eyes on the seated portrait
-    add = {'G': (124, 170, 92), 'g': (84, 128, 66), 'y': (168, 162, 94), 'p': (16, 18, 8), 'w': (240, 234, 216)}
-    ix = {}
-    for k, c in add.items(): pal.append(c); ix[k] = len(pal) - 1
-    ix['K'] = int(np.argmin([sum(c) for c in pal]))
-    eye = ['.KKKK.', 'KwGGgK', 'KGppGK', 'KygpyK', '.KKKK.']
-    o = sprites['sit'][0]
-    for ox, oy in ((13, 24), (25, 24)):
-        for j, row in enumerate(eye):
-            for i, ch in enumerate(row):
-                if ch != '.': o[oy + j, ox + i] = ix[ch]
 
     # export: shared palette + one module per pose; PNGs at 1x and 4x
     keys = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
