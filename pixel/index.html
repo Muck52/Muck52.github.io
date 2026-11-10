@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pixel Cats Study</title>
+<meta name="description" content="Pixel cats, study 01: an adorable but breed-true Norwegian Forest Cat sprite, with the breed standard mapped to pixel decisions.">
+<style>
+  :root { --bg: #0d0f0e; --panel: #141715; --line: #262b28; --ink: #d8dcd6; --muted: #8a918b; --silk: #8fc79a; --warm: #e0a868; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.65 ui-monospace, Menlo, Consolas, monospace; }
+  main { max-width: 860px; margin: 0 auto; padding: 40px 16px 80px; }
+  h1 { color: var(--silk); font-size: 24px; margin: 0 0 4px; line-height: 1.3; }
+  h2 { color: var(--silk); font-size: 18px; margin: 44px 0 10px; padding-top: 12px; border-top: 1px solid var(--line); }
+  p, li { margin: 0 0 12px; }
+  a { color: var(--silk); }
+  .lede { color: var(--muted); }
+  .stage { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin: 20px 0; }
+  .tile { border: 1px solid var(--line); border-radius: 6px; padding: 16px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; min-height: 300px; position: relative; }
+  .tile span { position: absolute; top: 8px; left: 10px; font-size: 11px; color: var(--muted); }
+  .tile.dark { background: #1f2622; }
+  .tile.light { background: #ece6d8; }
+  .tile.light span { color: #6b6457; }
+  .tile.grass { background: linear-gradient(#9fc2d4 0 70%, #6f9a4c 70% 100%); }
+  .tile.grass span { color: #2a3d2a; }
+  canvas.px { image-rendering: pixelated; image-rendering: crisp-edges; display: block; }
+  .scales { display: flex; align-items: flex-end; gap: 28px; flex-wrap: wrap; padding: 16px; background: #1f2622; border: 1px solid var(--line); border-radius: 6px; }
+  .scales figure { margin: 0; text-align: center; }
+  .scales figcaption { font-size: 12px; color: var(--muted); margin-top: 6px; }
+  .pal { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
+  .sw { display: flex; gap: 8px; align-items: center; font-size: 12px; }
+  .sw i { width: 22px; height: 22px; border-radius: 3px; border: 1px solid #000; flex: none; }
+  .sw b { color: var(--ink); font-weight: 600; }
+  .sw em { color: var(--muted); font-style: normal; }
+  .table-wrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  th, td { text-align: left; padding: 6px 12px 6px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; }
+  .tag { display: inline-block; font-size: 11px; padding: 0 6px; border-radius: 3px; border: 1px solid #3a423c; white-space: nowrap; }
+  .true { border-color: #3d5a43; color: var(--silk); }
+  .cute { border-color: #6b4a2e; color: var(--warm); }
+  .zoomwrap { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-start; }
+  #zoom { background: #1f2622; border: 1px solid var(--line); border-radius: 6px; cursor: crosshair; max-width: 100%; height: auto; }
+  #pixinfo { font-size: 12px; color: var(--muted); min-width: 180px; }
+  code { color: #ece5d2; background: #1a1d1b; padding: 1px 4px; border-radius: 3px; font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+<p class="lede"><a href="../cat/">← Cat Lab (study 01: base model)</a></p>
+<h1>Pixel cats · study 01: the Norwegian Forest Cat</h1>
+<p class="lede">The goal is a sprite that is adorable at a glance and still unmistakably <i>this breed</i> to someone who knows cats. This first draft is a sitting cat in profile, 62 × 66 px, brown mackerel tabby &amp; white, the coat most people picture for a "Wegie".</p>
+
+<div class="stage">
+  <div class="tile dark"><span>3× on dark</span><canvas class="px" data-scale="3"></canvas></div>
+  <div class="tile light"><span>3× on light</span><canvas class="px" data-scale="3"></canvas></div>
+  <div class="tile grass"><span>3× in a scene</span><canvas class="px" data-scale="3"></canvas></div>
+</div>
+
+<h2>Actual size and zoom</h2>
+<p>Pixel art has to work at 1×, where only the silhouette and a few colour masses survive. The tall tufted ear, the triangular head, the white bib and the big tail plume should all still read at 1×.</p>
+<div class="scales">
+  <figure><canvas class="px" data-scale="1"></canvas><figcaption>1×</figcaption></figure>
+  <figure><canvas class="px" data-scale="2"></canvas><figcaption>2×</figcaption></figure>
+  <figure><canvas class="px" data-scale="4"></canvas><figcaption>4×</figcaption></figure>
+</div>
+
+<h2>Breed standard → pixel decisions</h2>
+<p>Each row is a point from the breed standard (as written by FIFe and TICA; summarised from memory, so check against the current standards) and what the sprite does about it.</p>
+<div class="table-wrap"><table>
+  <tr><th>Standard says</th><th>In the sprite</th><th></th></tr>
+  <tr><td><b>Head</b>: an equilateral triangle, all sides equal from the outer base of the ears to the chin</td><td>Skull plus a wedge running from the forehead to the chin, with the ear's outer edge continuing the triangle's side</td><td><span class="tag true">true</span></td></tr>
+  <tr><td><b>Profile</b>: straight, from brow to nose tip with no break; this is the clearest difference from the Maine Coon, whose profile has a gentle concave curve and a squarer muzzle</td><td>A single straight run of pixels from the forehead to the nose leather. The main reason for drawing the cat in profile</td><td><span class="tag true">true</span></td></tr>
+  <tr><td><b>Chin</b>: firm</td><td>A strong, slightly forward chin with a soft shadow line separating it from the bib</td><td><span class="tag true">true</span></td></tr>
+  <tr><td><b>Ears</b>: large, broad at the base, pointed, set high; lynx tips and long ear furnishings desirable</td><td>Tall wide-based ear, pink inside with pale furnishings, and a 3-pixel lynx tuft</td><td><span class="tag true">true</span></td></tr>
+  <tr><td><b>Eyes</b>: large, almond-shaped, slightly oblique, any colour</td><td>A 6 × 5 almond with a 3-pixel catchlight, green</td><td><span class="tag cute">pushed</span> bigger and glossier than life</td></tr>
+  <tr><td><b>Coat</b>: semi-long double coat with water-repellent guard hairs; full ruff (shirt front) and "britches" on the hind legs</td><td>A white ruff with tufted edges, a fluffed thigh outline, and a lit edge on every tuft, the way light catches long fur</td><td><span class="tag true">true</span></td></tr>
+  <tr><td><b>Tail</b>: long and bushy, reaching at least to the shoulder blades</td><td>A plume wrapped forward along the ground to the paws, thicker than the legs, with tabby rings and a dark tip</td><td><span class="tag true">true</span></td></tr>
+  <tr><td><b>Body</b>: large and solid, hind legs longer than the front</td><td>A heavy pear-shaped sitting mass with a big haunch. Hind-leg length will show properly in the standing sprite</td><td><span class="tag true">true</span></td></tr>
+  <tr><td><b>Paws</b>: large and round, with tufts between the toes</td><td>Big round white paw with toe lines. The tufts are too small to show at this size</td><td><span class="tag true">partly</span></td></tr>
+  <tr><td><b>Colour</b>: almost all colours accepted; colourpoint patterns are not</td><td>Brown mackerel tabby &amp; white: bold broken stripes, a forehead "M", a cheek line and tail rings</td><td><span class="tag true">true</span></td></tr>
+</table></div>
+
+<h2>Where it leans adorable</h2>
+<ul>
+  <li><b>Head about 20% larger</b> than true proportion. A bigger head relative to the body is the strongest "cute" cue, and it also gives the breed-defining face more pixels.</li>
+  <li><b>Oversized glossy eye</b> with a big catchlight and a slightly lifted outer corner.</li>
+  <li><b>A one-pixel smile</b> and a whisker-pad highlight.</li>
+  <li><b>Soft, warm palette</b>: the outline is brown, not black, and it lightens to a soft brown on lit edges, so the cat looks fluffy, not inked.</li>
+  <li><b>Rounded, pear-shaped mass</b>, with the tail wrapped round the paws like a scarf.</li>
+</ul>
+<p>What stays strictly true is everything a breed person checks first: the straight profile, the triangular head, the ear set with lynx tips, the ruff, the britches and the tail.</p>
+
+<h2>Palette</h2>
+<p>Fifteen colours, all warm, built as a ramp. Light comes from the top-left.</p>
+<div class="pal" id="pal"></div>
+
+<h2>Inspect</h2>
+<p>Hover over or tap a pixel to see its palette key.</p>
+<div class="zoomwrap"><canvas id="zoom" class="px"></canvas><div id="pixinfo">—</div></div>
+
+<h2>Files and next steps</h2>
+<ul>
+  <li><code>pixel/sprites/nfc-sit.png</code> (1×, transparent) and <code>nfc-sit@4x.png</code>, ready to drop into a game.</li>
+  <li><code>pixel/sprites/nfc-sit.js</code>: the same sprite as palette plus pixel rows, so coat variants are just palette swaps.</li>
+  <li><code>pixel/tools/nfc_sit.py</code>: the generator. Shapes, then auto light and shade, then markings, then a hand-placed face.</li>
+</ul>
+<p>Candidate next steps: a 3/4 face portrait (the most "adorable" view), a standing sprite that shows the longer hind legs and full tail length, a walk cycle, and colour variants (solid black &amp; white, silver tabby, red).</p>
+</main>
+
+<script type="module">
+import sprite from './sprites/nfc-sit.js';
+const NAMES = { K: 'outline', k: 'soft outline', D: 'tabby stripe', d: 'core shadow', M: 'base fur', L: 'lit fur', H: 'highlight',
+  W: 'white', S: 'white shade', s: 'white line', E: 'iris', F: 'iris shade', e: 'pupil', N: 'nose leather', P: 'inner ear' };
+
+function draw(canvas, scale) {
+  canvas.width = sprite.w * scale;
+  canvas.height = sprite.h * scale;
+  const ctx = canvas.getContext('2d');
+  sprite.rows.forEach((row, y) => {
+    [...row].forEach((ch, x) => {
+      if (ch === '.') return;
+      ctx.fillStyle = sprite.pal[ch];
+      ctx.fillRect(x * scale, y * scale, scale, scale);
+    });
+  });
+}
+document.querySelectorAll('canvas[data-scale]').forEach((c) => draw(c, +c.dataset.scale));
+
+const pal = document.getElementById('pal');
+const used = new Set(sprite.rows.join(''));
+for (const [k, hex] of Object.entries(sprite.pal)) {
+  if (!used.has(k)) continue;
+  pal.insertAdjacentHTML('beforeend', `<div class="sw"><i style="background:${hex}"></i><span><b>${k}</b> ${NAMES[k] || ''}<br><em>${hex}</em></span></div>`);
+}
+
+const zoom = document.getElementById('zoom');
+const Z = 8;
+draw(zoom, Z);
+const zctx = zoom.getContext('2d');
+const info = document.getElementById('pixinfo');
+let last = null;
+function pick(ev) {
+  const r = zoom.getBoundingClientRect();
+  const x = Math.floor(((ev.clientX - r.left) / r.width) * sprite.w);
+  const y = Math.floor(((ev.clientY - r.top) / r.height) * sprite.h);
+  if (x < 0 || y < 0 || x >= sprite.w || y >= sprite.h) return;
+  draw(zoom, Z);
+  zctx.strokeStyle = '#8fc79a';
+  zctx.lineWidth = 2;
+  zctx.strokeRect(x * Z + 1, y * Z + 1, Z - 2, Z - 2);
+  const ch = sprite.rows[y][x];
+  info.innerHTML = ch === '.' ? `(${x}, ${y}) transparent` : `(${x}, ${y})<br><b>${ch}</b> ${NAMES[ch] || ''}<br>${sprite.pal[ch]}`;
+}
+zoom.addEventListener('pointermove', pick);
+zoom.addEventListener('pointerdown', pick);
+</script>
+</body>
+</html>
