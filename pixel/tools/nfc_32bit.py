@@ -72,8 +72,8 @@ for y in range(G.h):                       # selective outline: softer line on l
 G.poly([(28.5,15),(28.8,5),(36,11)], 'P', only='MLHd')          # inner ear
 for (x, y) in [(29,11),(30,12),(29,13),(31,13)]: G.set(x, y, 'S')   # ear furnishings
 for (x, y) in [(27,0),(26,0),(27,1)]: G.set(x, y, 'K')             # lynx tip
-G.paint([' KKKK ', 'KEEEEK', 'EEEeeE', 'EFEeeF', ' FFFF '], 41, 15)  # big almond eye, slightly oblique
-G.set(42,17,'W'); G.set(43,17,'W'); G.set(42,18,'W')              # catchlight
+G.paint(['  KKK ', ' KEEEK', 'KEEEeE', 'EEEeeE', 'EFEeeF', ' FFFF '], 41, 14)  # big round almond eye, outer corner higher
+G.set(42,16,'W'); G.set(43,16,'W'); G.set(42,17,'W'); G.set(43,17,'W'); G.set(46,18,'W')   # catchlights
 G.set(54,23,'N'); G.set(53,23,'N'); G.set(54,22,'K'); G.set(55,23,'K')   # nose leather
 G.set(52,26,'s'); G.set(51,27,'s')                                # small smile
 G.set(49,26,'S'); G.set(50,25,'S')                                # whisker pad
