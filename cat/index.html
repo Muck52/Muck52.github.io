@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cat Lab</title>
+<meta name="description" content="A procedural, anatomically-grounded cat: skeleton, limb kinematics and gaits.">
+<style>
+  :root { --bg: #0d0f0e; --panel: #141715; --line: #262b28; --ink: #d8dcd6; --muted: #8a918b; --silk: #8fc79a; --warm: #e0705a; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.5 ui-monospace, Menlo, Consolas, monospace; }
+  header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; padding: 14px 16px 10px; }
+  header h1 { margin: 0; font-size: 18px; color: var(--silk); font-weight: 600; }
+  header p { margin: 0; color: var(--muted); flex: 1 1 260px; }
+  header a { color: var(--silk); }
+  .stage { position: relative; margin: 0 16px; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+  #scene { display: block; width: 100%; height: min(62vh, 560px); min-height: 300px; touch-action: none; cursor: crosshair; }
+  .hud { position: absolute; top: 8px; left: 10px; pointer-events: none; font-size: 12px; color: var(--ink); text-shadow: 0 1px 2px #000; }
+  .hud b { color: var(--silk); font-weight: 600; }
+  .hint { position: absolute; bottom: 6px; right: 10px; font-size: 11px; color: var(--muted); pointer-events: none; }
+  main { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; padding: 12px 16px 32px; }
+  section { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; min-width: 0; }
+  h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 0 0 8px; font-weight: 600; }
+  .btns { display: flex; flex-wrap: wrap; gap: 6px; }
+  button, select { font: inherit; font-size: 13px; color: var(--ink); background: #1c201d; border: 1px solid #333a35; border-radius: 4px; padding: 5px 10px; cursor: pointer; }
+  button:hover { border-color: var(--silk); }
+  button.on { background: #24382a; border-color: var(--silk); color: #e6f4e8; }
+  button.act { border-color: #6b3a30; }
+  button.act:hover { border-color: var(--warm); }
+  .row { display: flex; align-items: center; gap: 8px; margin: 8px 0 0; flex-wrap: wrap; }
+  .row label { color: var(--muted); }
+  input[type=range] { flex: 1 1 140px; accent-color: var(--silk); }
+  .checks { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 10px; }
+  .checks label { display: flex; gap: 6px; align-items: center; cursor: pointer; }
+  input[type=checkbox] { accent-color: var(--silk); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  td { padding: 2px 0; }
+  td:first-child { color: var(--muted); }
+  td.num { text-align: right; color: var(--ink); }
+  td.rng { text-align: right; color: var(--muted); font-size: 12px; }
+  #gaitchart { width: 100%; height: 120px; display: block; border-radius: 4px; }
+  .legend { display: flex; gap: 14px; font-size: 12px; color: var(--muted); margin-top: 6px; flex-wrap: wrap; }
+  .sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; vertical-align: -1px; margin-right: 4px; }
+  .note { color: var(--muted); font-size: 12px; margin: 8px 0 0; }
+  @media (max-width: 600px) { .hint { display: none; } #scene { height: 46vh; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Cat Lab · study 01: the base model</h1>
+  <p>A procedural cat built from its skeleton up, covering limb kinematics, gaits, posture and the hunting sequence. Read the <a href="study.html">study notes</a> for the reasoning behind every number.</p>
+</header>
+
+<div class="stage">
+  <canvas id="scene" aria-label="Animated side view of the cat model"></canvas>
+  <div class="hud"><b id="r-gait">stand</b></div>
+  <div class="hint">move the pointer: the cat watches it · space = pause · . = step</div>
+</div>
+
+<main>
+  <section>
+    <h2>Behaviour</h2>
+    <div class="btns">
+      <button data-mode="stand" class="on">Stand</button>
+      <button data-mode="sit">Sit</button>
+      <button data-mode="crouch">Crouch</button>
+      <button data-mode="stretch">Stretch</button>
+      <button data-mode="stalk">Stalk</button>
+    </div>
+    <div class="btns" style="margin-top:6px">
+      <button data-speed="45">Walk</button>
+      <button data-speed="150">Trot</button>
+      <button data-speed="320">Gallop</button>
+      <button id="pounce" class="act">Pounce</button>
+      <button id="jump" class="act">Jump</button>
+    </div>
+    <div class="row">
+      <label for="speed">speed</label>
+      <input id="speed" type="range" min="0" max="450" step="1" value="0">
+      <output id="speedOut">0.00 m/s</output>
+    </div>
+    <div class="row">
+      <label for="gaitMode">gait</label>
+      <select id="gaitMode">
+        <option value="auto">auto (Froude)</option>
+        <option value="walk">walk</option>
+        <option value="trot">trot</option>
+        <option value="gallop">gallop</option>
+      </select>
+      <label for="jumpH">jump</label>
+      <select id="jumpH">
+        <option value="40">40 cm</option>
+        <option value="60" selected>60 cm</option>
+        <option value="90">90 cm</option>
+      </select>
+    </div>
+    <p class="note">Pounce aims at the pointer if it's 30–170 cm ahead of the nose.</p>
+  </section>
+
+  <section>
+    <h2>Locomotion</h2>
+    <table>
+      <tr><td>speed</td><td class="num" id="r-v" colspan="2">0</td></tr>
+      <tr><td>Froude no. v²/gh</td><td class="num" id="r-fr" colspan="2">0</td></tr>
+      <tr><td>stride length λ</td><td class="num" id="r-lambda" colspan="2">—</td></tr>
+      <tr><td>stride frequency</td><td class="num" id="r-f" colspan="2">—</td></tr>
+      <tr><td>duty factor β</td><td class="num" id="r-beta" colspan="2">—</td></tr>
+    </table>
+    <h2 style="margin-top:12px">Footfalls</h2>
+    <canvas id="gaitchart" aria-label="Footfall diagram: bars show when each foot is on the ground"></canvas>
+    <div class="legend"><span><span class="sw" style="background:#e0705a"></span>hind</span><span><span class="sw" style="background:#8fc79a"></span>fore</span><span>bar = foot on ground</span></div>
+  </section>
+
+  <section>
+    <h2>Near-side joint angles</h2>
+    <table>
+      <tr><td>hip</td><td class="num" id="a-hip"></td><td class="rng"></td></tr>
+      <tr><td>stifle (knee)</td><td class="num" id="a-stifle"></td><td class="rng"></td></tr>
+      <tr><td>hock (ankle)</td><td class="num" id="a-hock"></td><td class="rng"></td></tr>
+      <tr><td>shoulder</td><td class="num" id="a-shoulder"></td><td class="rng"></td></tr>
+      <tr><td>elbow</td><td class="num" id="a-elbow"></td><td class="rng"></td></tr>
+      <tr><td>carpus (wrist)</td><td class="num" id="a-carpus"></td><td class="rng"></td></tr>
+    </table>
+    <p class="note">Interior angles, 180° = straight. Right column: recent range of motion.</p>
+  </section>
+
+  <section>
+    <h2>View</h2>
+    <div class="checks">
+      <label><input type="checkbox" id="v-skin">skin</label>
+      <label><input type="checkbox" id="v-skeleton">skeleton</label>
+      <label><input type="checkbox" id="v-labels">joint labels</label>
+      <label><input type="checkbox" id="v-prints">trackway</label>
+      <label><input type="checkbox" id="v-grid">10 cm grid</label>
+    </div>
+    <div class="row">
+      <label for="coat">coat</label><select id="coat"></select>
+      <label for="timeScale">time</label>
+      <select id="timeScale">
+        <option value="1">1×</option>
+        <option value="0.5">½×</option>
+        <option value="0.25">¼×</option>
+        <option value="0.1">⅒×</option>
+      </select>
+    </div>
+    <div class="row">
+      <button id="pause">Pause</button>
+      <button id="step">Step</button>
+    </div>
+  </section>
+</main>
+
+<script type="module" src="js/lab.js"></script>
+</body>
+</html>

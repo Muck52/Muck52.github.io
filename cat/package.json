@@ -1,0 +1,9 @@
+{
+  "name": "cat-study",
+  "private": true,
+  "type": "module",
+  "description": "Procedural cat model: anatomy, limb IK and gait engine. No build step; open index.html via any static server.",
+  "scripts": {
+    "check": "node tests/check.mjs"
+  }
+}

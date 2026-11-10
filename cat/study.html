@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cat Study 01</title>
+<meta name="description" content="Study 01 of the cat project: the anatomical and locomotor base model, with the reasoning, numbers, validation and open questions.">
+<style>
+  :root { --bg: #0d0f0e; --panel: #141715; --line: #262b28; --ink: #d8dcd6; --muted: #8a918b; --silk: #8fc79a; --warm: #e0705a; --bone: #ece5d2; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.65 ui-monospace, Menlo, Consolas, monospace; }
+  main { max-width: 780px; margin: 0 auto; padding: 40px 16px 80px; }
+  h1 { color: var(--silk); font-size: 24px; margin: 0 0 4px; line-height: 1.3; }
+  h2 { color: var(--silk); font-size: 18px; margin: 48px 0 8px; padding-top: 12px; border-top: 1px solid var(--line); }
+  h3 { font-size: 15px; margin: 28px 0 6px; color: var(--ink); }
+  p, li { margin: 0 0 12px; }
+  ul, ol { padding-left: 22px; }
+  a { color: var(--silk); }
+  .muted { color: var(--muted); }
+  .lede { color: var(--muted); margin-bottom: 20px; }
+  code { color: var(--bone); background: #1a1d1b; padding: 1px 4px; border-radius: 3px; font-size: 13px; }
+  .eq { display: block; background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--silk); padding: 10px 14px; margin: 12px 0 16px; color: var(--bone); overflow-x: auto; white-space: pre; font-size: 14px; }
+  .table-wrap { overflow-x: auto; margin: 10px 0 18px; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  th, td { text-align: left; padding: 5px 10px 5px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; }
+  td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
+  .tag { display: inline-block; font-size: 11px; padding: 0 6px; border-radius: 3px; border: 1px solid #3a423c; color: var(--muted); }
+  .tag.src { border-color: #3d5a43; color: var(--silk); }
+  .tag.est { border-color: #6b4a2e; color: #d8a874; }
+  .tag.fit { border-color: #4a4a6b; color: #a7a7d8; }
+  figure { margin: 18px 0 22px; padding: 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; }
+  figcaption { color: var(--muted); font-size: 13px; margin-top: 8px; }
+  svg { display: block; max-width: 100%; height: auto; }
+  .toc { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 12px 16px; font-size: 14px; }
+  .toc ol { margin: 0; }
+  .toc li { margin: 2px 0; }
+  .callout { border-left: 3px solid var(--warm); background: #1a1513; padding: 10px 14px; margin: 16px 0; }
+  .callout b { color: var(--warm); }
+  .ok { color: var(--silk); }
+  .bad { color: var(--warm); }
+  .refs li { font-size: 13px; color: #bfc4bd; }
+  #status { font-size: 12px; color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+<p class="muted"><a href="./">← Cat Lab</a></p>
+<h1>Study 01: the base model of the cat</h1>
+<p class="lede">The end goal is an animated environment where a cat lives, moving, jumping and hunting, with everything around it something it can interact with. Before any of that, the cat has to be right. This study builds the cat as a mechanism: skeleton, limb kinematics, gait and the hunting sequence. It records where every number came from, and what is still uncertain.</p>
+
+<div class="toc">
+<ol>
+  <li><a href="#approach">Approach</a></li>
+  <li><a href="#reference">The reference cat: dimensions</a></li>
+  <li><a href="#skeleton">Skeleton and posture</a></li>
+  <li><a href="#limbs">Limb mechanics: the pantograph leg</a></li>
+  <li><a href="#gait">Gait: footfalls, speed and timing</a></li>
+  <li><a href="#head">Head, senses and tail</a></li>
+  <li><a href="#hunt">The hunting sequence and ballistics</a></li>
+  <li><a href="#validation">Validation</a></li>
+  <li><a href="#open">Open questions and known gaps</a></li>
+  <li><a href="#next">Interface for the environment, and what's next</a></li>
+  <li><a href="#refs">References</a></li>
+</ol>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="approach">1. Approach</h2>
+<p>The cat is <b>procedural, not keyframed</b>. Nothing is a canned animation. Each frame, a small number of high-level quantities fully determine the body: speed, gait, posture, a look target and a jump target. That matters for the environment that comes later. A cat that has to chase a moth or land on a shelf needs motion that is <i>computed</i> from where things are, not played back.</p>
+<p>The model is built in layers, each fed by the one before:</p>
+<ol>
+  <li><b>Anatomy</b>: fixed bone lengths and a soft-tissue envelope (<code>js/anatomy.js</code>).</li>
+  <li><b>Posture</b>: a small set of numbers for trunk heights, spinal curvature, neutral paw positions, head and tail carriage, and ear and pupil state. Named postures (stand, sit, crouch…) are just presets, and the body blends continuously between them (<code>js/motion.js</code>).</li>
+  <li><b>Locomotion</b>: a gait engine decides <i>when</i> each paw lifts and <i>where</i> it lands. Planted paws are pinned to the world (<code>js/cat.js</code>).</li>
+  <li><b>Inverse kinematics</b>: an exact solver turns "hip here, paw there" into joint positions (<code>js/ik.js</code>).</li>
+  <li><b>Secondary motion</b>: head stabilisation, gaze, blinking and a dynamic tail.</li>
+  <li><b>Rendering</b>: skin built from the skeleton, or the skeleton itself (<code>js/render.js</code>). Rendering only reads the model, so the art can be replaced freely later.</li>
+</ol>
+<p>The view is a 2D side elevation, the classic plane of locomotion studies from Muybridge onward. It shows exactly what matters for running, jumping and pouncing. Units are centimetres and seconds throughout, with y pointing up. The near side of the cat is its <b>left</b> (it faces right), so <code>L</code> limbs are drawn in front and <code>R</code> limbs behind.</p>
+<p>Data is tagged by provenance: <span class="tag src">sourced</span> means a published or widely documented value, <span class="tag est">estimated</span> means judged from proportions or photographs and needs checking, and <span class="tag fit">fitted</span> means tuned in the model to satisfy a constraint.</p>
+
+<!-- ============================================================ -->
+<h2 id="reference">2. The reference cat: dimensions</h2>
+<p>The model is one specific animal: an adult domestic shorthair of about 4.5 kg. Domestic cats vary a lot (a Siamese and a Maine Coon differ by a factor of two in mass), so the anatomy table is the single place to change to make another cat.</p>
+<div class="table-wrap"><table>
+  <tr><th>Quantity</th><th class="n">Model</th><th>Basis</th></tr>
+  <tr><td>Body mass</td><td class="n">4.5 kg</td><td><span class="tag src">sourced</span> typical adult range ≈ 3.5–5.5 kg</td></tr>
+  <tr><td>Head + body length</td><td class="n">≈ 46 cm</td><td><span class="tag src">sourced</span> typical ≈ 45–50 cm</td></tr>
+  <tr><td>Tail length</td><td class="n">27 cm</td><td><span class="tag src">sourced</span> typical ≈ 25–30 cm</td></tr>
+  <tr><td>Height at withers (standing)</td><td class="n">≈ 25.8 cm</td><td><span class="tag src">sourced</span> typical ≈ 23–25 cm (+ fur)</td></tr>
+  <tr><td>Withers → sacrum (spine arc)</td><td class="n">27 cm</td><td><span class="tag est">estimated</span> from head-body length minus head, neck and pelvis</td></tr>
+  <tr><td>Scapula (pivot → shoulder joint)</td><td class="n">7.2 cm</td><td><span class="tag est">estimated</span></td></tr>
+  <tr><td>Humerus</td><td class="n">9.2 cm</td><td><span class="tag est">estimated</span></td></tr>
+  <tr><td>Radius / ulna</td><td class="n">8.8 cm</td><td><span class="tag est">estimated</span></td></tr>
+  <tr><td>Carpus + metacarpus</td><td class="n">3.0 cm</td><td><span class="tag est">estimated</span></td></tr>
+  <tr><td>Femur</td><td class="n">9.6 cm</td><td><span class="tag est">estimated</span></td></tr>
+  <tr><td>Tibia / fibula</td><td class="n">10.4 cm</td><td><span class="tag est">estimated</span></td></tr>
+  <tr><td>Tarsus + metatarsus (hock → ball of foot)</td><td class="n">5.6 cm</td><td><span class="tag est">estimated</span></td></tr>
+  <tr><td>Hip-joint height standing, <i>h</i></td><td class="n">23 cm</td><td><span class="tag fit">fitted</span> result of the above and the stand posture; used as leg length for Froude scaling</td></tr>
+</table></div>
+<p>Bone lengths are <i>functional</i> lengths, measured joint centre to joint centre, which run slightly shorter than a museum bone. The chain was sized so that a standing cat with natural joint angles (§3.4) has its withers and rump at the right heights. <b>Replacing these estimates with measured skeletal data is the first item in §9.</b></p>
+
+<!-- ============================================================ -->
+<h2 id="skeleton">3. Skeleton and posture</h2>
+
+<h3>3.1 The axial skeleton</h3>
+<p>The vertebral formula of the domestic cat is <b>C7 · T13 · L7 · S3 (fused) · Cd ≈ 18–23</b> <span class="tag src">sourced</span>. The model draws 13 thoracic and 7 lumbar vertebrae along the trunk, 7 cervical along the neck and 20 caudal in the tail. Thirteen pairs of ribs hang from the thoracic segment.</p>
+<p>The spine of a cat is extraordinarily flexible, especially the long lumbar region, which is what lets a cat fold double to groom and lengthen its stride at the gallop. The model treats the withers-to-sacrum spine as an <b>arc of constant length with uniform curvature</b>, controlled by a single number: <i>bend</i>, the total turning angle. Positive bend arches the back (dorsal flexion), negative hollows it (extension).</p>
+<span class="eq">chord = 2·sin(bend/2) / κ,    κ = bend / L,    L = 27 cm
+tangent at arc length s:  θ(s) = ψ + bend/2 − κ·s</span>
+<p>Arching shortens the chord. When the gallop flexes the spine, the shoulders are pulled toward the hips, and when it extends they are pushed apart. That is exactly the mechanism by which the back adds to stride length. The arc is solved in closed form, so there is no drift.</p>
+
+<h3>3.2 A shoulder without a collarbone</h3>
+<p>A cat's clavicle is a small, free-floating sliver that does not brace the shoulder against the sternum <span class="tag src">sourced</span>. The shoulder blade is held only by muscle (the thoracic sling), so it slides and rotates along the ribcage. That is why a walking cat's shoulder blades rise and fall visibly, why the chest can be so narrow, and why the forelimb gains reach.</p>
+<p><b>Modelling consequence:</b> the scapula is treated as a real limb segment, rotating about a pivot near its dorsal border just behind the withers. Both limbs therefore have <b>three long segments</b>, which is what makes the solver in §4 work for front and back alike.</p>
+
+<h3>3.3 Digitigrade limbs</h3>
+<p>Cats walk on their toes. The joint that looks like a "backward knee" on the hind leg is the <b>hock</b> (ankle). The real knee, the <b>stifle</b>, sits high against the belly, hidden by the thigh. On the forelimb, the joint just above the paw is the <b>carpus</b> (wrist). The point of the hock is the calcaneal tuber, the heel, which the model draws as a small backward projection.</p>
+<p>The hind limbs are longer than the fore limbs, so a standing cat's rump is slightly higher than its withers <span class="tag src">sourced</span>. The model has sacrum at 27.4 cm and withers at 25.8 cm, and the test suite checks this.</p>
+<p>Paws: five digits on each forepaw (one is the dewclaw, high on the inside) and four on each hind paw, with retractable claws <span class="tag src">sourced</span>. Study 01 models each paw as two rigid parts: the metacarpus or metatarsus, and the digits, which flex as the paw leaves the ground. Claws are not yet modelled.</p>
+
+<h3>3.4 Joint angles of the standing model</h3>
+<p>Interior angles of the near-side limbs in the quiet stance, measured from the running model (180° = straight):</p>
+<div class="table-wrap"><table id="angles">
+  <tr><th>Joint</th><th class="n">Stand</th><th class="n">Sit</th><th class="n">Crouch</th><th>Target band (stand)</th></tr>
+</table></div>
+<p>The standing bands come from proportioned drawings and photographs of standing cats <span class="tag est">estimated</span>. They are a sanity net, not ground truth: kinematic studies of the cat hind limb such as Goslow, Reinking &amp; Stuart (1973) are the right benchmark, and comparing against them properly is open work (§9). The sit pose is a useful structural check: the hock rests on the ground with the metatarsus flat, as it does in a real sitting cat.</p>
+
+<h3>3.5 Postures as numbers</h3>
+<p>A posture is a complete set of about 30 numbers: sacrum and withers heights, spinal bend, neutral paw positions, neck elevation, face angle, tail carriage, ear position, whisker spread, pupil dilation, step height, and more. The body never jumps between postures. Every number eases toward its target with exponential damping, so stand → sit → stalk is one continuous motion. While the body reshapes, any paw that ends up more than about a centimetre from its new neutral spot makes a small corrective step, one leg at a time. This is how a real cat shuffles its feet as it settles.</p>
+
+<!-- ============================================================ -->
+<h2 id="limbs">4. Limb mechanics: the pantograph leg</h2>
+<p>A limb with three long segments is kinematically redundant: infinitely many joint configurations put the paw on the same spot. Animators usually pick one by iterative solvers or hand-set hints. Biology offers a better constraint.</p>
+<p>Kinematic studies of small and medium therian mammals found that the first and third long segments of each limb stay <b>close to parallel</b> through much of the step cycle: femur and metatarsus behind, scapula and forearm in front. The limb behaves like a <b>pantograph</b> (Fischer &amp; Blickhan 2006). The model generalises "parallel" to "a fixed angle δ apart", and that turns the problem into something exactly solvable.</p>
+
+<figure>
+<svg viewBox="0 0 640 300" role="img" aria-label="Diagram of the pantograph limb reduction">
+  <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#8a918b"/></marker></defs>
+  <!-- ground -->
+  <line x1="20" y1="270" x2="620" y2="270" stroke="#8a918b" stroke-width="1"/>
+  <!-- real limb: hip (140,40) knee (205,120) hock (115,205) mtp (153,262) -->
+  <line x1="140" y1="40" x2="205" y2="120" stroke="#ece5d2" stroke-width="5" stroke-linecap="round"/>
+  <line x1="205" y1="120" x2="115" y2="205" stroke="#ece5d2" stroke-width="5" stroke-linecap="round"/>
+  <line x1="115" y1="205" x2="153" y2="262" stroke="#ece5d2" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="140" cy="40" r="6" fill="#e0705a"/><circle cx="205" cy="120" r="5" fill="#e0705a"/><circle cx="115" cy="205" r="5" fill="#e0705a"/><circle cx="153" cy="262" r="5" fill="#e0705a"/>
+  <text x="100" y="38" fill="#d8dcd6" font-size="13">hip</text>
+  <text x="214" y="118" fill="#d8dcd6" font-size="13">stifle</text>
+  <text x="62" y="208" fill="#d8dcd6" font-size="13">hock</text>
+  <text x="166" y="262" fill="#d8dcd6" font-size="13">paw</text>
+  <text x="182" y="78" fill="#8fc79a" font-size="12">s1 femur</text>
+  <text x="168" y="172" fill="#8fc79a" font-size="12">s2 tibia</text>
+  <text x="140" y="232" fill="#8fc79a" font-size="12">s3</text>
+  <text x="40" y="292" fill="#8a918b" font-size="12">real limb: s3 held at angle δ to s1</text>
+  <!-- arrow -->
+  <line x1="290" y1="150" x2="350" y2="150" stroke="#8a918b" stroke-width="1.5" marker-end="url(#ah)"/>
+  <!-- virtual limb: hip (440,40) virtual joint (543,167) -> target (453,262) -->
+  <line x1="440" y1="40" x2="543" y2="167" stroke="#8fc79a" stroke-width="4" stroke-dasharray="7 5" stroke-linecap="round"/>
+  <line x1="543" y1="167" x2="453" y2="262" stroke="#ece5d2" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="440" cy="40" r="6" fill="#e0705a"/><circle cx="543" cy="167" r="5" fill="#8fc79a"/><circle cx="453" cy="262" r="5" fill="#e0705a"/>
+  <line x1="440" y1="40" x2="453" y2="262" stroke="#8a918b" stroke-width="1" stroke-dasharray="2 4"/>
+  <text x="500" y="92" fill="#8fc79a" font-size="12">A = |s1 + s3·e^iδ|</text>
+  <text x="508" y="226" fill="#d8dcd6" font-size="12">B = s2</text>
+  <text x="362" y="292" fill="#8a918b" font-size="12">equivalent 2-bone limb, solved exactly</text>
+</svg>
+<figcaption>Fig. 1. Segments 1 and 3 always point in directions δ apart, so together they act as one rigid virtual segment. The three-segment limb becomes a two-bone limb with a closed-form solution.</figcaption>
+</figure>
+
+<p>Write the segment directions as complex numbers. If segment 1 points along angle <i>u</i> and segment 3 along <i>u</i>+δ, then:</p>
+<span class="eq">s1·e^(iu) + s3·e^(i(u+δ))  =  e^(iu) · (s1 + s3·e^(iδ))  =  A · e^(i(u+γ))
+
+A = |s1 + s3·e^(iδ)|,   γ = arg(s1 + s3·e^(iδ))</span>
+<p>Segments 1 and 3 jointly contribute a <b>single rigid vector</b> of length <i>A</i>. The limb is then an ordinary two-bone chain (<i>A</i>, s2), solved with the law of cosines. Recover <i>u</i> = <i>w</i> − γ from the virtual direction <i>w</i>, and every joint follows. This has several advantages:</p>
+<ul>
+  <li><b>Exact and instant</b>: no iteration, no convergence failures, identical answers every frame. Residual error is 0.000 cm whenever the target is reachable (§8).</li>
+  <li><b>The correct zig-zag for free</b>: stifle forward, hock back; shoulder forward, elbow back. It never flips.</li>
+  <li><b>One parameter per limb</b> sets the character of the leg. Hind δ = −8° (femur and metatarsus nearly parallel, as reported). Fore δ = −30°, because a cat's forearm stands more upright than its scapula <span class="tag fit">fitted</span> to the standing angles in §3.4.</li>
+  <li><b>Graceful failure</b>: out-of-reach targets straighten the limb along the line to the target, and the solver reports the overshoot so tests can count it.</li>
+</ul>
+<p>The paw sits below the chain. For the hind limb, the chain ends at the ball of the foot and the digits are added at a stance or swing angle. For the forelimb, the chain targets the wrist, placed from the paw by a pastern angle that is about 110° in stance, folds back to about 40° early in swing (the paw "flicks" backward) and extends again before touchdown.</p>
+
+<!-- ============================================================ -->
+<h2 id="gait">5. Gait: footfalls, speed and timing</h2>
+
+<h3>5.1 Footfall patterns</h3>
+<p>Each gait is defined by when each foot touches down, as a fraction of the stride cycle relative to the left hind:</p>
+<figure>
+<svg id="hildebrand" viewBox="0 0 640 330" role="img" aria-label="Footfall diagrams for walk, trot and gallop computed from the model"></svg>
+<figcaption>Fig. 2. Footfall (Hildebrand-style) diagrams computed live from the model's own gait templates and duty factors at 0.45, 1.5 and 3.2 m/s. Bars show when each foot is on the ground over two strides. Hind red, fore green.</figcaption>
+</figure>
+<ul>
+  <li><b>Walk</b>: a <i>lateral-sequence</i> four-beat walk, LH → LF → RH → RF at even quarter-cycle spacing. Each hind foot is followed by the fore foot on the same side <span class="tag src">sourced</span>.</li>
+  <li><b>Trot</b>: diagonal pairs (LH + RF, then RH + LF), two beats per stride.</li>
+  <li><b>Gallop</b>: a <i>rotary</i> gallop, LH → RH → RF → LF, the sequence circling the body. This is the fast gait of felids. There is an aerial phase after the forelimbs push off, with the legs gathered under the body and the spine flexed, and the spine extends again as the hind limbs reach back.</li>
+</ul>
+
+<h3>5.2 Speed: dynamic similarity</h3>
+<p>To set stride length and gait transitions for a cat-sized animal, the model uses <b>dynamic similarity</b> (Alexander &amp; Jayes 1983). Animals of different size move in geometrically similar ways when they travel at the same <b>Froude number</b>:</p>
+<span class="eq">Fr = v² / (g·h)           h = hip height (23 cm)
+λ / h ≈ 2.3 · Fr^0.3       (relative stride length, Alexander 1976)</span>
+<p>Quadrupeds tend to switch from walk to trot near <b>Fr ≈ 0.5</b> and from trot to gallop around <b>Fr ≈ 2–3</b> <span class="tag src">sourced</span>. For our cat that is about 1.1 m/s and 2.2–2.6 m/s. The model switches automatically with a hysteresis band (walk→trot at 0.5, back at 0.4; trot→gallop at 2.2, back at 1.7), so a cat holding a borderline speed doesn't flicker between gaits.</p>
+
+<h3>5.3 Timing: swing is nearly constant</h3>
+<p>Treadmill and free-walking studies of cats (Goslow et al. 1973; Halbertsma 1983) report that the <b>swing phase lasts nearly the same time at every speed</b>. Cats go faster mainly by <b>shortening stance</b> <span class="tag src">sourced</span>. The model follows that directly:</p>
+<span class="eq">T_swing ≈ 0.26 − 0.025·v  s  (v in m/s, clamped 0.17–0.30)
+f = v / λ                  (stride frequency)
+β = 1 − T_swing · f        (duty factor: fraction of the stride a foot is down)</span>
+<p>This gives duty factors falling from about 0.68 at a slow walk to about 0.31 at the gallop. Those values sit in the right regimes: above 0.5 when walking, below 0.5 when running, and about 0.3 with aerial phases at the gallop.</p>
+
+<h3>5.4 Coordination: coupled oscillators</h3>
+<p>In 1911, T. Graham Brown showed that a cat's spinal cord can generate stepping rhythms on its own. This led to the idea of spinal <b>central pattern generators</b> (CPGs) for locomotion (see Grillner 1985). The model borrows the idea. Each leg has its own phase oscillator, pulled toward the active gait's template by a weak coupling term:</p>
+<span class="eq">dφ_i/dt = f + K · wrap(φ_ref − o_i − φ_i)      K = 3 s⁻¹</span>
+<p>When the gait changes, the template offsets <i>o_i</i> are blended on the circle, and each leg drifts into its new timing over a fraction of a second. Walk-to-trot-to-gallop is therefore a smooth reorganisation, not a cut, and you can watch it happen in the lab's footfall diagram while dragging the speed slider.</p>
+
+<h3>5.5 Planted paws and swing paths</h3>
+<p>A foot in stance is <b>pinned in world coordinates</b>. It cannot slip, and the body moves over it. At lift-off, the foot records where it was. During swing, it travels to a landing spot predicted from the current speed, chosen so the paw passes under its neutral position at mid-stance:</p>
+<span class="eq">x_land = x_root + v · t_remaining + neutral + β·λ/2</span>
+<p>The swing follows an eased horizontal path with a raised arc whose height depends on the posture: about 3 cm walking, 6 cm galloping and 2 cm stalking. Because the prediction is recomputed every frame, swing paths stay consistent when the cat accelerates mid-stride.</p>
+<p>The trunk rides on top with gait-specific oscillations:</p>
+<ul>
+  <li><b>Walk</b>: the body vaults over stiff legs and is highest at mid-stance.</li>
+  <li><b>Trot</b>: the body bounces on compliant legs and is lowest at mid-stance.</li>
+  <li><b>Gallop</b>: the front and back rise and fall out of phase (rocking), and the spine flexes and extends once per stride.</li>
+</ul>
+
+<h3>5.6 What the model actually does</h3>
+<p>Measured live in your browser by running the model headlessly at each speed for 6 s <span id="status">(computing…)</span>:</p>
+<div class="table-wrap"><table id="sweep">
+  <tr><th class="n">speed m/s</th><th>gait</th><th class="n">Fr</th><th class="n">stride λ cm</th><th class="n">freq Hz</th><th class="n">duty β</th><th class="n">β measured</th><th class="n">hind print − fore print</th></tr>
+</table></div>
+<p>The last column says where each hind paw lands relative to the last print of the fore paw on the same side. Zero means <b>direct registering</b>, the hind paw stepping into the fore paw's print, which is widely described as characteristic of a walking cat <span class="tag src">sourced</span>. Nothing in the model asks for it. It emerges where stride length matches the spacing between fore and hind paws.</p>
+<div class="callout"><b>Finding.</b> With the generic quadruped stride law, this cat registers directly only at about 0.75–0.8 m/s. At slower walks it understeps by several centimetres. At 1.0 m/s, still a walk, the duty factor has dropped to about 0.43, below the 0.5 that defines a walk. Both point the same way: at low speed, real cats probably take <i>longer, slower</i> strides than the all-quadruped fit predicts. The fix belongs in study 02 and should be calibrated against cat data, not tuned by eye. It is a single constant, <code>STRIDE_COEF</code> in <code>js/motion.js</code>, plus the swing-time law.</div>
+
+<!-- ============================================================ -->
+<h2 id="head">6. Head, senses and tail</h2>
+<h3>6.1 A steady head</h3>
+<p>Predators need a steady view. The model stabilises the head against the body's gait oscillation: the neck angle is solved each frame so the head follows a <i>smoothed</i> height, while the trunk bobs underneath. Head pitch eases toward its target with its own time constant. Compare the bouncing withers with the level head in the trot.</p>
+<h3>6.2 Gaze, eyes, ears and whiskers</h3>
+<ul>
+  <li><b>Gaze</b>: given a world point (in the lab, your pointer), the head turns toward it within ±43° of its postural angle, and the neck lifts or lowers slightly. The pupils track it inside the eye.</li>
+  <li><b>Pupils</b> are vertical slits that dilate with arousal. They are narrow at rest and nearly round during the pounce. Vertical slit pupils are associated with ambush predators that hunt close to the ground (Banks et al. 2015) <span class="tag src">sourced</span>.</li>
+  <li><b>Blinks</b> come at random intervals of 2–6 s.</li>
+  <li><b>Ears</b>: each cat ear is moved by around 30 muscles and can swivel independently <span class="tag src">sourced</span>. Study 01 models only a single fold-back parameter. Independent swivelling is planned, and it matters for hunting, because the ears point at sounds.</li>
+  <li><b>Whiskers</b> (about 12 per side, in rows): relaxed, they sweep sideways and back, and when hunting they fan forward around the prey <span class="tag src">sourced</span>.</li>
+</ul>
+<h3>6.3 The tail</h3>
+<p>The tail is a chain of 20 segments. Each one chases a target angle relative to its parent through a critically damped spring, stiff at the root and loose at the tip, so motion ripples down it. Three forces shape it:</p>
+<ul>
+  <li><b>Carriage</b> from the posture: root elevation plus a curl concentrated toward the tip. Upright with a hooked tip when walking (the friendly "question mark"), streamed straight back at the gallop, low and straight when stalking, curled on the ground when sitting.</li>
+  <li><b>Gravity</b>, which sags a relaxed tail more than an alert one.</li>
+  <li><b>Drag and inertia</b>: the tail is pushed against the root's velocity, so it trails behind a sprint and dips when the cat leaps up.</li>
+</ul>
+<p>It also collides with the ground, so a sitting cat's tail lies along the floor. The tip-twitch before a pounce is a posture parameter: a fast, low-amplitude wave.</p>
+
+<!-- ============================================================ -->
+<h2 id="hunt">7. The hunting sequence and ballistics</h2>
+<p>Leyhausen's classic studies of cat predatory behaviour describe a stereotyped sequence. The model's status for each element:</p>
+<div class="table-wrap"><table>
+  <tr><th>Phase</th><th>What the cat does</th><th>Model</th></tr>
+  <tr><td>Watch</td><td>Fixes gaze on the prey, ears forward, pupils widen</td><td class="ok">gaze target, pupils, whiskers ✓</td></tr>
+  <tr><td>Stalk</td><td>Low, slow "slinking" approach, belly near the ground, head level</td><td class="ok">stalk posture + slow walk ✓</td></tr>
+  <tr><td>Freeze / crouch</td><td>Stops in cover, gathers the hind feet under the body</td><td class="ok">crouch, prep gathers hind paws ✓</td></tr>
+  <tr><td>Tread</td><td>Shifts weight hind foot to hind foot, the "butt wiggle", tail tip twitching</td><td class="ok">4 Hz hindquarter oscillation + tail-tip wave ✓ (rendered in the vertical plane, since a 2D side view can't show side-to-side)</td></tr>
+  <tr><td>Pounce</td><td>Low, flat leap. Hind legs extend, forepaws reach for the prey</td><td class="ok">ballistic leap at 22°, aimed at a target ✓</td></tr>
+  <tr><td>Pin</td><td>Lands forepaws-first on the prey, head down</td><td class="ok">forepaws plant first, head drops to −38° ✓</td></tr>
+  <tr><td>Bite / play / carry</td><td>Neck bite, batting, carrying</td><td class="bad">not yet: needs prey (study 02+)</td></tr>
+</table></div>
+<h3>7.1 Ballistics</h3>
+<p>Once airborne, the body follows a projectile under gravity, g = 9.81 m/s². Given a target distance <i>D</i> and launch angle θ, the required take-off speed is:</p>
+<span class="eq">v₀ = √(g·D / sin 2θ)        flight time t = 2·v₀·sin θ / g        peak = (v₀·sin θ)² / 2g</span>
+<p>A <b>pounce</b> uses θ = 22°, low and flat so the prey has little time to react. For a 1 m pounce that gives v₀ ≈ 3.6 m/s, about 0.3 s of flight and a peak only about 10 cm above take-off height. A <b>vertical jump</b> to height H sets tan θ = 4H/D with a short forward reach, so a 60 cm leap needs about 3.5 m/s at about 84°. Healthy cats are often reported to clear five to six times their own height. The lab offers 40, 60 and 90 cm, well within that.</p>
+<p>The body's ballistic range is shorter than the nose's travel, because the head and forelimbs reach forward at take-off and the landing slides a little. The pounce therefore subtracts a calibrated 22 cm. The tests confirm the nose arrives within about 5% of the target across 50–160 cm.</p>
+<h3>7.2 In the air and landing</h3>
+<p>Airborne limbs are sprung toward targets <i>in the girdle's frame</i>, not the world's, so they keep up with a body travelling at 3–4 m/s. Each target blends between an ascending pose (pounce: forelimbs reaching, hinds trailing; jump: all four tucked) and a descending pose (limbs extended down to meet the ground). Body pitch follows vertical velocity: nose up while rising, down while falling. On contact, each paw plants as it reaches the ground. The legs absorb most of the impact, and the body keeps about 22% of its downward speed as a brief, damped sink.</p>
+
+<!-- ============================================================ -->
+<h2 id="validation">8. Validation</h2>
+<p>A headless test suite (<code>npm run check</code> in <code>cat/</code>) runs the model with no browser and measures it against the claims in this document. Every claim with a number has a test. Current result: <b>39 / 39 checks pass</b>, including:</p>
+<ul>
+  <li>Every paw reaches its contact point in every static posture (residual 0.000 cm), with no joint below ground.</li>
+  <li>Standing joint angles are inside their bands, and the rump stands higher than the withers.</li>
+  <li>Footfall sequence <i>measured from touchdown events</i>: walk LF 0.25 · RH 0.51 · RF 0.76; trot exact diagonal pairs; gallop rotary, RH 0.10 · RF 0.51 · LF 0.61.</li>
+  <li>Measured duty factor equals the commanded one, and the measured stride equals λ.</li>
+  <li>Planted paws never slip (0.000 cm), and limbs stay within reach (0% over-reach at walk, trot and gallop).</li>
+  <li>Stopping leaves all four paws planted at their neutral spots.</li>
+  <li>A pounce lands within about 5% of its aimed distance, with a flat trajectory. A 60 cm jump rises 58.6 cm.</li>
+  <li>A 16-second stress script (gallop → sit → trot → pounce → stretch → jump) produces no numerical faults.</li>
+</ul>
+<p>The tests check that the model is <b>self-consistent</b> and does what this document says. They do <b>not</b> check that it matches a real cat beyond the sourced facts it encodes. That second kind of validation, against measured cat kinematics, is the main open item.</p>
+
+<!-- ============================================================ -->
+<h2 id="open">9. Open questions and known gaps</h2>
+<ol>
+  <li><b>Measured bone lengths.</b> Replace the estimated segment lengths in §2 with measurements from a cat skeleton or a published osteometric source, then refit δ for each limb.</li>
+  <li><b>Joint-angle benchmarks.</b> Compare stance and swing joint-angle curves against published cat kinematics (e.g. Goslow et al. 1973) instead of photographic bands.</li>
+  <li><b>Slow-walk stride.</b> See the finding in §5.6. Recalibrate <code>STRIDE_COEF</code> and the swing-time law so the cat direct-registers at a normal walk and keeps β &gt; 0.5 throughout the walk.</li>
+  <li><b>Kinematic, not dynamic.</b> The body follows prescribed motion, and there is no mass distribution, centre of mass or ground-reaction force. That is the right choice for an animated environment, but balance-dependent behaviour (narrow beams, the mid-air righting reflex) will need at least a centre-of-mass check.</li>
+  <li><b>No turning.</b> A side view has no way to turn around yet. Turning needs a ¾ "facing the camera" transition pose or a mirrored rig, and the environment will need it from day one.</li>
+  <li><b>Lateral motion.</b> The tread before the pounce is really side-to-side, and so is tail swishing. Both are drawn in the vertical plane for now.</li>
+  <li><b>Not yet modelled:</b> claws, independent ear swivel, mouth opening, kneading, grooming, lying down (loaf, side-lying), climbing and fur.</li>
+  <li><b>Citations</b> below were compiled from the author's working knowledge. Check them against the originals before quoting page numbers.</li>
+</ol>
+
+<!-- ============================================================ -->
+<h2 id="next">10. Interface for the environment, and what's next</h2>
+<p>The environment drives the cat only through a small API. The cat knows nothing about the world except the ground plane and the targets it's given:</p>
+<span class="eq">const cat = new Cat({ x });
+cat.update(dt)                     // fixed 1/120 s steps recommended
+cat.setSpeed(cmPerSecond)          // gait chosen automatically
+cat.setMode('stand'|'sit'|'crouch'|'stretch'|'stalk')
+cat.setLook({ x, y } | null)       // attention target: prey, sound, toy
+cat.pounce(targetX)                // full stalk-crouch-tread-leap-pin
+cat.jump(heightCm)
+cat.rig                            // every joint, for rendering and collision
+cat.events / cat.onFootfall        // paw touchdowns: prints, sound, dust</span>
+<p>Suggested studies from here:</p>
+<ol>
+  <li><b>Study 02: calibration.</b> Close the open items in §9 (1)–(3) against measured cat data.</li>
+  <li><b>Study 03: the world.</b> Terrain with heights (shelves, boxes, steps), so jumps have targets and landings have surfaces. Turning around.</li>
+  <li><b>Study 04: prey and things that move.</b> Moths, mice, birds, a feather toy, rolling objects. Each one with its own escape behaviour, sound and visual cues the cat can sense.</li>
+  <li><b>Study 05: the cat's mind.</b> A behaviour layer that chooses between rest, explore, groom and hunt from internal drives and what the cat perceives, then drives this API.</li>
+</ol>
+
+<!-- ============================================================ -->
+<h2 id="refs">11. References</h2>
+<ol class="refs">
+  <li>Alexander, R. McN. (1976). Estimates of speeds of dinosaurs. <i>Nature</i> 261, 129–130.</li>
+  <li>Alexander, R. McN. &amp; Jayes, A. S. (1983). A dynamic similarity hypothesis for the gaits of quadrupedal mammals. <i>Journal of Zoology</i> 201, 135–152.</li>
+  <li>Banks, M. S., Sprague, W. W., Schmoll, J., Parnell, J. A. Q. &amp; Love, G. D. (2015). Why do animal eyes have pupils of different shapes? <i>Science Advances</i> 1(7), e1500391.</li>
+  <li>Brown, T. G. (1911). The intrinsic factors in the act of progression in the mammal. <i>Proceedings of the Royal Society B</i> 84, 308–319.</li>
+  <li>Fischer, M. S. &amp; Blickhan, R. (2006). The tri-segmented limbs of therian mammals: kinematics, dynamics, and self-stabilization — a review. <i>Journal of Experimental Zoology</i> 305A, 935–952.</li>
+  <li>Goslow, G. E., Reinking, R. M. &amp; Stuart, D. G. (1973). The cat step cycle: hind limb joint angles and muscle lengths during unrestrained locomotion. <i>Journal of Morphology</i> 141, 1–41.</li>
+  <li>Grillner, S. (1985). Neurobiological bases of rhythmic motor acts in vertebrates. <i>Science</i> 228, 143–149.</li>
+  <li>Halbertsma, J. M. (1983). The stride cycle of the cat: the modelling of locomotion by computerized analysis of automatic recordings. <i>Acta Physiologica Scandinavica, Supplementum</i> 521.</li>
+  <li>Hildebrand, M. (1965). Symmetrical gaits of horses. <i>Science</i> 150, 701–708. (Origin of the footfall diagram used in Fig. 2.)</li>
+  <li>Leyhausen, P. (1979). <i>Cat Behavior: The Predatory and Social Behavior of Domestic and Wild Cats.</i> Garland STPM Press.</li>
+  <li>Muybridge, E. (1887). <i>Animal Locomotion.</i> University of Pennsylvania. (Includes photographic sequences of walking and galloping cats against a measured grid, the inspiration for the lab's backdrop.)</li>
+  <li>Reighard, J. &amp; Jennings, H. S. (1901). <i>Anatomy of the Cat.</i> Henry Holt.</li>
+</ol>
+</main>
+
+<script type="module">
+import { measureGait, SWEEP_SPEEDS } from './js/measure.js';
+import { Cat } from './js/cat.js';
+import { GAITS } from './js/motion.js';
+
+// ---- joint angles in three postures
+const posture = (mode) => {
+  const c = new Cat();
+  c.setMode(mode);
+  for (let i = 0; i < 600; i++) c.update(1 / 120);
+  return c.jointAngles();
+};
+const A = { stand: posture('stand'), sit: posture('sit'), crouch: posture('crouch') };
+const bands = { hip: '—', stifle: '110–135°', hock: '115–140°', shoulder: '95–125°', elbow: '120–150°', carpus: '—' };
+const names = { hip: 'hip', stifle: 'stifle (knee)', hock: 'hock (ankle)', shoulder: 'shoulder', elbow: 'elbow', carpus: 'carpus (wrist)' };
+const at = document.getElementById('angles');
+for (const k of Object.keys(names)) {
+  const tr = at.insertRow();
+  tr.innerHTML = `<td>${names[k]}</td><td class="n">${A.stand[k].toFixed(0)}°</td><td class="n">${A.sit[k].toFixed(0)}°</td><td class="n">${A.crouch[k].toFixed(0)}°</td><td>${bands[k]}</td>`;
+}
+
+// ---- footfall diagrams from the model's own templates
+const svg = document.getElementById('hildebrand');
+const NS = 'http://www.w3.org/2000/svg';
+const el = (tag, attrs, text) => {
+  const e = document.createElementNS(NS, tag);
+  for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+  if (text) e.textContent = text;
+  svg.appendChild(e);
+  return e;
+};
+const rows = ['LH', 'LF', 'RF', 'RH'];
+const demo = [['walk', 45], ['trot', 150], ['gallop', 320]];
+const x0 = 100, x1 = 630, bandH = 100;
+demo.forEach(([g, v], gi) => {
+  const m = measureGait(v, { settle: 1.5, seconds: 2 });
+  const beta = m.beta;
+  const y0 = 10 + gi * bandH;
+  el('text', { x: 0, y: y0 + 12, fill: '#8fc79a', 'font-size': 12 }, `${g}`);
+  el('text', { x: 0, y: y0 + 27, fill: '#8a918b', 'font-size': 10 }, `β=${beta.toFixed(2)}`);
+  rows.forEach((id, r) => {
+    const y = y0 + 4 + r * 20;
+    el('text', { x: 72, y: y + 12, fill: '#8a918b', 'font-size': 10 }, id);
+    const off = GAITS[g].offsets[id];
+    for (let k = -1; k < 2; k++) {
+      // stance from touchdown (off) for β of the cycle; two cycles across the width
+      let a = (off + k) / 2, b = (off + k + beta) / 2;
+      a = Math.max(a, 0); b = Math.min(b, 1);
+      if (b <= a) continue;
+      el('rect', { x: x0 + a * (x1 - x0), y, width: (b - a) * (x1 - x0), height: 14, rx: 2, fill: id[1] === 'H' ? '#e0705a' : '#8fc79a' });
+    }
+  });
+  el('line', { x1: x0 + (x1 - x0) / 2, x2: x0 + (x1 - x0) / 2, y1: y0, y2: y0 + 84, stroke: '#8a918b', 'stroke-dasharray': '2 3' });
+});
+
+// ---- live speed sweep (yield between rows so the page stays responsive)
+const table = document.getElementById('sweep');
+const status = document.getElementById('status');
+let i = 0;
+function next() {
+  if (i >= SWEEP_SPEEDS.length) { status.textContent = '(computed live)'; return; }
+  const v = SWEEP_SPEEDS[i++];
+  const m = measureGait(v);
+  const reg = m.register;
+  const tr = table.insertRow();
+  tr.innerHTML = `<td class="n">${(v / 100).toFixed(2)}</td><td>${m.gait}</td><td class="n">${m.Fr.toFixed(2)}</td><td class="n">${m.lambda.toFixed(1)}</td><td class="n">${m.f.toFixed(2)}</td><td class="n">${m.beta.toFixed(2)}</td><td class="n">${m.dutyMeasured.toFixed(2)}</td><td class="n ${Math.abs(reg) < 2 ? 'ok' : ''}">${reg >= 0 ? '+' : ''}${reg.toFixed(1)} cm</td>`;
+  setTimeout(next, 0);
+}
+next();
+</script>
+</body>
+</html>
